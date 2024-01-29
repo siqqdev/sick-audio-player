@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+      "target": "es6",                          
+      "module": "esnext",                     
+      "jsx": "react",                          
+      "strict": true,                           
+      "esModuleInterop": true,                  
+      "lib": ["esnext", "dom", "esnext.asynciterable", "es2015"],
+      "outDir": "./dist/",
+      "sourceMap": true,
+      "declaration": true,
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+    },
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.css"
+    ],
+    "exclude": ["node_modules", "dist"]
+  }
