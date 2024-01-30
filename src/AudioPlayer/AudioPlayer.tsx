@@ -1,13 +1,13 @@
 import React, { ReactNode, useEffect, useRef, useState } from 'react'
 import { Howl, Howler } from 'howler';
-import styles from './AudioPlayer.module.css';
 import useSecondsToMinutes from '../Hooks/useSecondsToMinutes'
 import useAudioPlayer from '../Hooks/useAudioPlayer'
-import PrevIcon from '../Icons/PrevIcon'
-// import PlayIcon from '../Icons/PlayIcon'
-// import StopIcon from '../Icons/StopIcon'
-import NextIcon from '../Icons/NextIcon'
-import {SpeakerWaveIcon, ForwardIcon, BackwardIcon, PlayIcon, StopIcon} from '@heroicons/react/16/solid'
+import {SpeakerWaveIcon} from '@heroicons/react/16/solid'
+import NextTrackButton from '../Components/Buttons/NextTrackButton';
+import PrevTrackButton from '../Components/Buttons/PrevTrackButton';
+import TimeSlider from '../Components/Sliders/TimeSlider';
+import VolumeSlider from '../Components/Sliders/VolumeSlider';
+import PlayStopButton from '../Components/Buttons/PlayStopButton';
 
 
 interface PlayerPropsTypes {
@@ -22,6 +22,8 @@ interface PlayerPropsTypes {
     prevIconProp?: ReactNode
 }
 
+Howler.autoUnlock = false;
+
 const AudioPlayer: React.FC<PlayerPropsTypes> = ({
     audioSrcProp,
     imageSrcProp,
@@ -33,7 +35,6 @@ const AudioPlayer: React.FC<PlayerPropsTypes> = ({
     nextIconProp,
     prevIconProp,
 }) => {
-    Howler.autoUnlock = false;
     const [audio, setAudio] = useState<Howl | null>(null);
     const [volume, setVolume] = useState<number>(50);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -50,6 +51,7 @@ const AudioPlayer: React.FC<PlayerPropsTypes> = ({
     useEffect(() => {
         const setNewAudioCallback = () => setNewAudio(audioSrcProp[currentIndex]);
         Array.isArray(audioSrcProp) ? setNewAudioCallback() : setNewAudio(audioSrcProp);
+        console.log(audioSrcProp[currentIndex]);
     }, [audioSrcProp, currentIndex, setNewAudio]);
 
     useEffect(() => {
@@ -64,40 +66,6 @@ const AudioPlayer: React.FC<PlayerPropsTypes> = ({
         return () => clearInterval(intervalId);
     }, [audio, secondsToMinutes, setCurrentSecond, setChangedTime]);
 
-    const handlePlayStopButton = () => {
-        setIsPlaying(!isPlaying);
-        isPlaying ? audio?.pause() : audio?.play();
-        setVolume(volume);
-    };
-
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVolume = parseInt(e.currentTarget.value, 10);
-        volumeRef.current = newVolume;
-        setVolume(newVolume)
-        if (audio) {
-            audio.volume(newVolume / 100);
-        }
-    };
-
-    const handleTimeLineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newTime = parseInt(e.currentTarget.value, 10);
-        setChangedTime(newTime);
-    };
-
-    const handleTimeLineChangeOnMouseUp = () => {
-        setTimeout(() => {
-            if (audio?.playing()) {
-                audio?.pause();
-                audio?.seek(changedTime);
-                audio?.play();
-            } else {
-                audio?.seek(changedTime);
-            }
-        
-            setCurrentSecond(secondsToMinutes(changedTime.toString()));
-        }, 100)
-    };
-
     const playerBoxStyles: React.CSSProperties = {
         backgroundColor: `${bgColorProp ? bgColorProp : 'rgba(0, 0, 0, 0.2)'}`,
         justifyContent: 'center',
@@ -107,60 +75,6 @@ const AudioPlayer: React.FC<PlayerPropsTypes> = ({
         padding: '1em 2em 1em 2em',
     };
 
-    const sliderStyles = {
-        '--slider-color': sliderColorProp || '#ffffff',
-        '--thumb-color': sliderColorProp || '#ffffff',
-    } as React.CSSProperties;
-
-    const PlayButton: React.FC = () =>
-        playIconProp ? playIconProp : <PlayIcon color='white' style={{ width: '24px', height: '24px' }}/>
-
-    const StopButton: React.FC = () =>
-        stopIconProp ? stopIconProp : <StopIcon color='white' style={{ width: '24px', height: '24px' }}/>
-
-    const handlePrevButton = async () => {
-        if (Array.isArray(audioSrcProp) && audio) {
-            if (currentIndex !== 0) {
-                await new Promise<void>((resolve) => {
-                    audio.once('stop', () => resolve());
-                    audio.stop();
-                    setCurrentIndex((prev) => prev - 1);
-                    setNewAudio(Array.isArray(audioSrcProp[currentIndex]) ? audioSrcProp[currentIndex] : audioSrcProp);
-                    setChangedTime(0);
-                });
-            } else {
-                await new Promise<void>((resolve) => {
-                    audio.once('pause', () => resolve());
-                    audio.pause();
-                });
-
-                setChangedTime(0);
-            }
-            setIsPlaying(false);
-        }
-    };
-
-    const handleNextButton = async () => {
-        if (Array.isArray(audioSrcProp) && audio) {
-            if (currentIndex < audioSrcProp.length - 1) {
-                await new Promise<void>((resolve) => {
-                    audio.once('stop', () => resolve());
-                    audio.stop();
-                    setCurrentIndex((prev) => prev + 1);
-                    setNewAudio(Array.isArray(audioSrcProp[currentIndex]) ? audioSrcProp[currentIndex] : audioSrcProp);
-                    setChangedTime(0);
-                });
-            } else {
-                await new Promise<void>((resolve) => {
-                    audio.once('pause', () => resolve());
-                    audio.pause();
-                });
-
-                setChangedTime(0);
-            }
-            setIsPlaying(false);
-        }
-    };
 return (
     <div style={{ justifyContent: 'center', display: 'flex' }}>
         <div style={playerBoxStyles}>
@@ -173,26 +87,37 @@ return (
                     null
                 }
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem'}}>
-                    <div onClick={() => handlePrevButton()} style={{ cursor: 'pointer' }}>
-                        {
-                            prevIconProp ? prevIconProp
-                            : 
-                            <BackwardIcon color='white' style={{ width: '24px', height: '24px' }} />
-                        }
+                    <PrevTrackButton 
+                        audioSrcProp={audioSrcProp}
+                        audio={audio}
+                        currentIndex={currentIndex}
+                        setCurrentIndex={setCurrentIndex}
+                        setNewAudio={setNewAudio}
+                        setChangedTime={setChangedTime}
+                        setIsPlaying={setIsPlaying}
+                        prevIconProp={prevIconProp}/>
+
+                    <div>
+                        <PlayStopButton 
+                        setIsPlaying={setIsPlaying}
+                        isPlaying={isPlaying}
+                        audio={audio}
+                        stopIconProp={stopIconProp}
+                        playIconProp={playIconProp}
+                        />
                     </div>
 
-                    <div onClick={() => handlePlayStopButton()} style={{ cursor: 'pointer' }}>
-                        {
-                            isPlaying ? <StopButton /> : <PlayButton />
-                        }
-                    </div>
-
-                    <div onClick={() => handleNextButton()} style={{ cursor: 'pointer' }}>
-                        {
-                            nextIconProp ? nextIconProp 
-                            :
-                            <ForwardIcon color='white' style={{ width: '24px', height: '24px' }} />
-                        }
+                    <div>
+                        <NextTrackButton 
+                        audioSrcProp={audioSrcProp}
+                        audio={audio}
+                        currentIndex={currentIndex}
+                        setCurrentIndex={setCurrentIndex}
+                        setNewAudio={setNewAudio}
+                        setChangedTime={setChangedTime}
+                        setIsPlaying={setIsPlaying}
+                        nextIconProp={nextIconProp}
+                        />
                     </div>
                 </div>
 
@@ -209,16 +134,12 @@ return (
                 <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
                     <div style={{ width: '100%', justifyContent: 'center'}}>
                         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                            <input 
-                                type="range"
-                                min={0}
-                                max={audio?.duration() || 100}
-                                value={changedTime}
-                                step={1}
-                                onChange={(e) => handleTimeLineChange(e)}
-                                onMouseUp={() => handleTimeLineChangeOnMouseUp()}
-                                className={`${styles.sliderTime} ${styles.sliderColor} ${styles.sliderThumbColor}`}
-                                style={sliderStyles}    
+                            <TimeSlider 
+                            audio={audio}
+                            setChangedTime={setChangedTime}
+                            changedTime={changedTime}
+                            setCurrentSecond={setCurrentSecond}
+                            sliderColorProp={sliderColorProp}
                             />
                         </div>
 
@@ -229,15 +150,12 @@ return (
                                 <SpeakerWaveIcon style={{ width: '10px', height: '10px' }} color='white'/>
                             }
                             
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                step='1'
-                                value={volume}
-                                onChange={handleVolumeChange}
-                                className={`${styles.sliderVolume} ${styles.sliderColor} ${styles.sliderThumbColor}`}
-                                style={sliderStyles}
+                            <VolumeSlider 
+                            volumeRef={volumeRef}
+                            audio={audio}
+                            setVolume={setVolume}
+                            volume={volume}
+                            sliderColorProp={sliderColorProp}
                             />
                         </div>
                     </div>

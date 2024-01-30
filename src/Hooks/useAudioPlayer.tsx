@@ -5,7 +5,7 @@ import useSecondsToMinutes from './useSecondsToMinutes';
 const useAudioPlayer = (
   setAudio: React.Dispatch<React.SetStateAction<Howl | null>>,
   setAudioDuration: React.Dispatch<React.SetStateAction<string | undefined>>,
-  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>, // Изменение типа здесь
+  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>,
   setChangedTime: React.Dispatch<React.SetStateAction<number>>,
   volumeRef: React.MutableRefObject<number>
 ) => {
